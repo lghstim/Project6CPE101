@@ -54,7 +54,6 @@ def fade_image():
    finally: 
       sys.exit(1)
 
-
 def process_single_pixel(pixel, x_loc, y_loc, out_file):
    dist = distance_from_pixel_to_point((x_loc, y_loc), (int(sys.argv[2]), int(sys.argv[3])))
    pixel =  scale_pixel_components(pixel, dist) # returns scaled pixel
