@@ -2,54 +2,51 @@ import sys
 import math
 
 def blur_image():
-   try:
-      pixel = []
-      pixels = []
-      all_pixel_coords = []
+   pixel = []
+   pixels = []
+   pixels_row = []
+   all_pixel_coords = []
+   reach = 4
+   if len(sys.argv) == 2:
       reach = 4
-      if len(sys.argv) == 2:
-         reach = 4
-      in_file = open(sys.argv[1], 'r')
-      out_file = open('blur.ppm', 'w')
-      line_num = 1
-      image_properties = []
-      x_loc = 0
-      y_loc = 0
-      # read each pixel and set image properties
-      for line in in_file:
-         line = line.strip() # strip \n at end of string 
-         if line_num <= 3:
-            image_properties.append(line)
-            if line_num == 2:
-               width_image = int(line.split(' ')[0])
-               height_image = int(line.split(' ')[1])
-         if line_num == 3:
-            set_out_file_image_properties(image_properties, out_file)
-         if line_num > 3:
-            pixel.append(int(line))
-            if len(pixel) == 3:
-               pixels.append(pixel) # append pixel to the 2D list
-               all_pixel_coords.append((x_loc, y_loc)) # append pixel coords
-               if x_loc == width_image - 1:
-                  y_loc += 1
-                  x_loc = 0
-               else:
-                  x_loc += 1
-               pixel = []
-         line_num += 1
-      # process pixels
-      for current_pixel in pixels: 
-         neighbor_pixels = get_neighbor_pixels(current_pixel, all_pixel_coords, pixels, reach)
-         updated_pixel = get_updated_pixel(current_pixel, neighbor_pixels)
-         current_pixel = updated_pixel 
-         red_val = current_pixel[0]
-         green_val = current_pixel[1]
-         blue_val = current_pixel[2]
-         write_pixel(current_pixel[0], current_pixel[1], current_pixel[2], out_file)
-       
-      in_file.close()
-      out_file.close()
-   except IndexError:
+   in_file = open(sys.argv[1], 'r')
+   out_file = open('blur.ppm', 'w')
+   line_num = 1
+   image_properties = []
+   row = 0
+   col = 0
+   width_image = 0
+   height_image = 0
+   # read each pixel and set image properties
+   for line in in_file:
+      line = line.strip() # strip \n at end of string 
+      if line_num <= 3:
+         image_properties.append(line)
+         if line_num == 2:
+            width_image = int(line.split(' ')[0])
+            height_image = int(line.split(' ')[1])
+      if line_num == 3:
+         set_out_file_image_properties(image_properties, out_file)
+      if line_num > 3:
+         pixel.append(int(line))
+         if len(pixel) == 3: 
+            pixels_row.append(pixel)
+            if col == width_image - 1:
+               pixels.append(pixels_row)
+               pixels_row = []
+               row += 1
+               col = 0
+            else:
+               col += 1
+            pixel = []
+      line_num += 1
+
+   process_pixels(pixels, out_file, reach)
+   out_file.close()
+   in_file.close()
+   
+
+   ''' except IndexError:
       print('Usage: python3 blur.py <image> [<reach>]')
    except PermissionError:
       print('Unable to open <image>'.format())
@@ -57,49 +54,72 @@ def blur_image():
       print('Unable to open <image>'.format())
    finally:
       sys.exit(1)
+   '''
 
-# returns pixels list
-def process_pixels():
-   pass
+def process_pixels(pixels, out_file, reach):
+   # process pixels
+   for x in range(len(pixels)): # iterate rows
+      for y in range(len(pixels[0])): # iterate cols
+         current_pixel = pixels[x][y]
+         cur_x = x
+         cur_y = y
+         updated_pixel = get_updated_pixel(current_pixel, cur_x, cur_y, pixels, reach)
+         red_val = updated_pixel[0]
+         green_val = updated_pixel[1]
+         blue_val = updated_pixel[2]
+         write_pixel(red_val, green_val, blue_val, out_file)
 
+  
 def groups_of_3(values): # values is a list
    values = [int(val) for val in values] # convert string list to int list
    groups_of_three = []
    for index in range(0, len(values), 3): # increment by 3 each iteration
       groups_of_three.append(values[index:index+3])
-   #print(groups_of_three)
    return groups_of_three
 
-def get_neighbor_pixels(current_pixel, all_pixel_coords, pixels, reach):
+def get_neighbor_pixels(current_pixel, cur_x, cur_y, pixels, reach):
    neighbor_pixels = []
-   current_pixel_index = pixels.index(current_pixel) # get index of current_pixel
-   for index in range(len(pixels)):
-      dist = get_distance(all_pixel_coords[current_pixel_index], all_pixel_coords[index]) # distance from current pixel to another pixel in image
-      if dist <= reach * math.sqrt(2) and dist != 0: # if within neighbor range and not the current pixel
-         neighbor_pixels.append(pixels[index]) # the pixels list and all_pixel_coords list are indexed in the same way
+   x_min = cur_x - reach # starting x
+   y_min = cur_y - reach # starting y
+   x_max = cur_x + reach
+   y_max = cur_y + reach
+   if (x_min < 0): # if out of bounds on left
+      x_min = 0
+   if (y_min < 0): # if out of bounds on top
+      y_min = 0
+   if (x_max > len(pixels)):
+      x_max = len(pixels) - 1 # if out of bounds on right side
+   if (y_max > len(pixels[0])):
+      y_max = len(pixels[0]) - 1 # if out of bounds on bottom
+   
+   #i.e. cur_x = 5 and cur_y = 9
+   # other pixel: x = 5 and y = 12
+   for x in range(x_min, x_max, 1): # rows 
+      for y in range(y_min, y_max, 1): # cols
+         if (x != cur_x or y != cur_y): # if not the current pixel
+            #print("x: {:d}".format(x))
+            #print("y: {:d}".format(y))
+            neighbor_pixels.append(pixels[x][y])
    return neighbor_pixels
 
-# get distance between two pixels
-def get_distance(current_pixel_coords, other_pixel_coords):
-   return math.sqrt((current_pixel_coords[0] - other_pixel_coords[0]) ** 2 + (current_pixel_coords[1] - other_pixel_coords[1]) ** 2)
-
-def get_updated_pixel(current_pixel, neighbor_pixels):
+def get_updated_pixel(current_pixel, cur_x, cur_y, pixels, reach):
+   neighbor_pixels = get_neighbor_pixels(current_pixel, cur_x, cur_y, pixels, reach)
    sum_red_val = 0
    sum_green_val = 0
    sum_blue_val = 0
-   num_vals = 0
+   num_pixels = len(neighbor_pixels) + 1
    for index in range(len(neighbor_pixels)):
-      num_vals += 1
       sum_red_val += neighbor_pixels[index][0]
       sum_green_val += neighbor_pixels[index][1]
       sum_blue_val += neighbor_pixels[index][2]
    sum_red_val += current_pixel[0]
    sum_green_val += current_pixel[1]
    sum_blue_val += current_pixel[2]
-   red_val_avg = sum_red_val / (num_vals + 1) # get avg red
-   green_val_avg = sum_green_val / (num_vals + 1) # get avg green
-   blue_val_avg = sum_blue_val / (num_vals + 1) # get avg blue
-   return [int(red_val_avg), int(green_val_avg), int(blue_val_avg)] # color of updated pixel
+   red_val_avg = sum_red_val / (num_pixels) # get avg red
+   green_val_avg = sum_green_val / (num_pixels) # get avg green
+   blue_val_avg = sum_blue_val / (num_pixels) # get avg blue
+   updated_pixel = [int(red_val_avg), int(green_val_avg), int(blue_val_avg)]
+   return updated_pixel # color of updated pixel
 
 def set_out_file_image_properties(image_properties, out_file):
    for value in image_properties:
