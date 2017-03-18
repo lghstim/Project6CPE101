@@ -2,65 +2,67 @@ import sys
 import math
 
 def blur_image():
-   pixel = []
-   pixels = []
-   pixels_row = []
-   all_pixel_coords = []
-   reach = 4
-   if len(sys.argv) == 2:
-      reach = 4
-   in_file = open(sys.argv[1], 'r')
-   out_file = open('blur.ppm', 'w')
-   line_num = 1
-   image_properties = []
-   row = 0
-   col = 0
-   width_image = 0
-   height_image = 0
-   # read each pixel and set image properties
-   for line in in_file:
-      line = line.strip() # strip \n at end of string 
-      if line_num <= 3:
-         image_properties.append(line)
-         if line_num == 2:
-            width_image = int(line.split(' ')[0])
-            height_image = int(line.split(' ')[1])
-      if line_num == 3:
-         set_out_file_image_properties(image_properties, out_file)
-      if line_num > 3:
-         pixel.append(int(line))
-         if len(pixel) == 3: 
-            pixels_row.append(pixel)
-            if col == width_image - 1:
-               pixels.append(pixels_row)
-               pixels_row = []
-               row += 1
-               col = 0
-            else:
-               col += 1
-            pixel = []
-      line_num += 1
+   try:
+      pixel = []
+      pixels = []
+      pixels_row = []
+      print(sys.argv)
+      if len(sys.argv) <= 2:
+         reach = 4
+      else:
+         reach = int(sys.argv[2])
+      in_file = open(sys.argv[1], 'r')
+      out_file = open('blur.ppm', 'w')
+      line_num = 1
+      image_properties = []
+      row = 0
+      col = 0
+      width_image = 0
+      height_image = 0
+      # read each pixel and set image properties
+      for line in in_file:
+         line = line.strip() # strip \n at end of string 
+         if line_num <= 3:
+            image_properties.append(line)
+            if line_num == 2:
+               width_image = int(line.split(' ')[0])
+               height_image = int(line.split(' ')[1])
+         if line_num == 3:
+            set_out_file_image_properties(image_properties, out_file)
+         if line_num > 3:
+            pixel.append(int(line))
+            if len(pixel) == 3: 
+               pixels_row.append(pixel)
+               if col == width_image - 1:
+                  pixels.append(pixels_row)
+                  pixels_row = []
+                  row += 1
+                  col = 0
+               else:
+                  col += 1
+               pixel = []
+         line_num += 1
 
-   process_pixels(pixels, out_file, reach)
-   out_file.close()
-   in_file.close()
-   
-
-   ''' except IndexError:
-      print('Usage: python3 blur.py <image> [<reach>]')
+      process_pixels(pixels, out_file, reach)
+      out_file.close()
+      in_file.close()
+      
+   except IndexError:
+      print("Usage: python3 blur.py <image> [<reach>]")
    except PermissionError:
-      print('Unable to open <image>'.format())
+      print('Unable to open <image>'.format(sys.argv[1]))
    except FileNotFoundError:
-      print('Unable to open <image>'.format())
+      print('Unable to open <image>')
    finally:
       sys.exit(1)
-   '''
 
 def process_pixels(pixels, out_file, reach):
    # process pixels
-   for x in range(len(pixels)): # iterate rows
-      for y in range(len(pixels[0])): # iterate cols
-         current_pixel = pixels[x][y]
+   print(len(pixels[0])) # width
+   print(len(pixels)) # height
+   for y in range(len(pixels)): 
+      for x in range(len(pixels[0])): 
+         current_pixel = pixels[y][x]
          cur_x = x
          cur_y = y
          updated_pixel = get_updated_pixel(current_pixel, cur_x, cur_y, pixels, reach)
@@ -87,19 +89,19 @@ def get_neighbor_pixels(current_pixel, cur_x, cur_y, pixels, reach):
       x_min = 0
    if (y_min < 0): # if out of bounds on top
       y_min = 0
-   if (x_max > len(pixels)):
-      x_max = len(pixels) - 1 # if out of bounds on right side
-   if (y_max > len(pixels[0])):
-      y_max = len(pixels[0]) - 1 # if out of bounds on bottom
-   
-   #i.e. cur_x = 5 and cur_y = 9
-   # other pixel: x = 5 and y = 12
-   for x in range(x_min, x_max, 1): # rows 
-      for y in range(y_min, y_max, 1): # cols
-         if (x != cur_x or y != cur_y): # if not the current pixel
+   if (y_max > len(pixels)):
+      y_max = len(pixels) # if out of bounds on right side
+   if (x_max > len(pixels[0])):
+      x_max = len(pixels[0]) # if out of bounds on bottom
+
+   for x in range(x_min, x_max, 1):
+      for y in range(y_min, y_max, 1): 
+         if (x == cur_x and y == cur_y): # if not the current pixel
+            pass
+         else:
             #print("x: {:d}".format(x))
             #print("y: {:d}".format(y))
-            neighbor_pixels.append(pixels[x][y])
+            neighbor_pixels.append(pixels[y][x])
    return neighbor_pixels
 
 def get_updated_pixel(current_pixel, cur_x, cur_y, pixels, reach):

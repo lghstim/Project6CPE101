@@ -18,7 +18,8 @@ class TestCases(unittest.TestCase):
       cur_x = 0
       cur_y = 0
       neighbor_pixels = get_neighbor_pixels(pixel, cur_x, cur_y, pixels, 4)
-      self.assertEqual(neighbor_pixels, [[[9, 90, 200], [59, 90, 100], [95, 25, 200], [25, 26, 29], [27, 29, 30], [31, 39, 41], [50, 90, 90]]])
+      print(neighbor_pixels)
+      self.assertEqual(neighbor_pixels, [[25, 26, 29], [9, 90, 200], [27, 29, 30], [59, 90, 100], [31, 39, 41], [95, 25, 200], [50, 90, 90]])
 
 if __name__ == "__main__":
    unittest.main()
